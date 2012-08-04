@@ -1,0 +1,61 @@
+
+The improvements of the switch statement over the Java version are great! I think it could be useful to add even more features to it, as I see have been discussed in the past.
+
+Having done some Haskell programming lately and enjoyed the convenience of using algebraic data types with pattern matching. Im interested in additions that enable you to use similar methods in Fantom.
+
+What I have in mind is something similar to Scalas match expression:
+TODO: http://www.artima.com/pins1ed/case-classes-and-pattern-matching.html#lst:typed-patterns
+
+This technique can be make some kind of logic very simple and concise, as the example in the Scala book demonstrates. A step in that direction would be to make it easy to test for type membership and introduce a variable of that type in one step.
+
+This has already been discussed in these threads:
+http://fantom.org/sidewalk/topic/981
+http://fantom.org/sidewalk/topic/970
+
+My proposal is to make it possible to do this in the switch statement.
+
+Example:
+
+pre>
+class Animal {}
+
+class Turtle : Animal { Int field1 := 1 }
+
+class Frog : Animal { Int field2 := 2 }
+
+Void testAlgType(Animal o)
+{
+  switch (o) {
+    case t is Turtle: echo(t.field1)
+    case f is Frog: echo(f.field2)
+  }
+}
+<pre
+
+A special use of the keyword 'is' makes the case branch match if o is of that type (or a subtype), and in that case creates a new variable of that type, it a scope that extends over that branch.
+
+As is pointed out in one of the treads above, it's probably a bad idea to change the type of a variable, both for human readability and because it might have complications for the implementation. Scalas solution avoids this.
+
+This is like what Andy suggests in one of the treads, except here a new variable is introduced in every branch.
+
+
+
+
+This is the closest I manage to get in Fantom today (in two different ways):
+pre>
+Void testAlgTypeOld(Animal o)
+{
+  switch (o.typeof) {
+    case Turtle#: echo(o->field1)
+    case Frog#: echo((o as Frog).field2)
+  }
+}
+<pre
+
+
+
+
+-------------------------------
+
+
+

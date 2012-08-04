@@ -1,0 +1,146 @@
+Intro
+=====
+
+A very useful feature in many functional languages is pattern matching. This makes it very easy and concise to write some kind of logic that can be pretty hairy to express with normal 'if':s and 'switch':s.
+
+I propose adding pattern matching capabilities to the Fantom 'switch' statement in a similar way to how it looks in Scala.
+
+For a description of the Scala model have a look at the [Programming Scala]`http://www.artima.com/pins1ed/case-classes-and-pattern-matching.html` book.
+
+Example
+=======
+
+This is an example of how it might look in Fantom:
+
+pre>
+class Animal{Animal? parent := null}
+
+class Turtle : Animal{Int field1 := 1}
+
+class Frog : Animal{Int field2 := 2}
+
+Void patternExample(Animal o)
+{
+  switch (o) {
+    case Turtle{field2 = 2; parent = Frog{} as par}:
+        echo("Object pattern. Parent: " + par)
+    case [1, _ as snd]:
+        echo("List pattern. Second list elem: " + snd)
+    case ["key1": 1, "key2": _ as val2] if (val2 > 7):
+        echo("Map pattern. key2: " + key2)
+    case 17:
+        echo("Simple literal")
+    default:
+        echo("Default")
+  }
+}
+<pre
+
+'TODO: Update text to code'
+
+The first 'case' branch is chosen if 'o' is a object of type 'Turtle', its 'field2' has value '2', and its field 'parent' has an object of type 'Frog' as its value. The 'par' variable introduced with the 'as' keyword can be used only in that branch.
+
+If that pattern doesn't match, the list patterns in the second 'case' is tried. It matches if 'o' is a two elem list, with '1' as its first elem and any second elem. '_' is the wildcard, "don't care" pattern. It is bound to the variable 'snd'.
+
+The third 'case' is a map pattern, checking for the presence of keys '"key1"' and '"key2"' in 'o', that '"key1"' is mapped to '1', and binding the value of '"key2"' to the variable 'key2'. 
+
+The fourth 'case' is a simple expression pattern, which is compared to 'o' with 'equals'.
+
+
+Details of proposal
+===================
+
+The current switch works by comparing the value of an expression in each 'case' with the objects 'equals' method. This would change so that after each 'case' a pattern is expected instead of an expression. The object that is switched on will be checked for a match against each pattern in turn.
+
+For simple literals this would means the same thing as a check with 'equals', but more complex patterns are also allowed. 
+
+After the 'case' keyword, list literals, map literals and it-block constructors will be interpreted as patterns, not as expressions creating objects.
+
+The value that is switched on is checked to see if it matches the structure of the pattern. The 'case' branch associated with the first matching pattern is executed.
+
+A pattern can be either:
+
+- A normal expression. This will work like the current switch, the value will be compared by 'equals'.
+
+- A literal object, it-block constructor style. This will be checked for a matching type, and can check the value of fields of that type with nested patterns.
+
+- A literal list, with nested patterns for the elements.
+
+- A literal map, with expressions for the keys and nested patterns for values.
+
+- The wildcard identifier, '_', which matches all values. This is useful when one wants to introduce new variables without checking their value.
+
+A pattern can also introduce new variables. That is done with the 'as' keyword followed by a free identifier, written after the pattern.
+
+A top level pattern can have a guard. It consists of an 'if' followed by a boolean expression. The pattern match if the expression evaluates to 'true'.
+
+
+Scala
+=====
+The Scala match statement is extendible in a very flexible way with custom extractors. This rimes well with Scalas goal of being extendible with new syntax, but it is complex and potentially bad for readability. The Fantom solution should probably aim for something simpler which solves the large majority of cases.
+
+
+Implementation
+==============
+The semantics of a switch in which only simple literals are used remain the same as in the current switch. It can be compiled in the same way as now.
+
+A possible implementation for a switch with complex patterns is to translate it into a number of nested 'if' statements. No fcode changes would be needed. 
+
+This file demonstrates what the translation might look:
+ 
+`https://github.com/jensli/Misc/blob/master/fan/PatternsTranslation.fan`
+
+Open problems
+=============
+
+Change of semantics
+-------------------
+  
+In this proposal the patterns are written as normal literals in the 'case' clauses. This will change the semantics of the switch, from comparing with the 'equals' method to comparing with patterns. For list and map literals pattern matching and 'equals' comparison would mean the same thing but for object patterns the meaning would change.
+
+A change in semantics is never good, however this case is probably extremely rare in code. In the Fantom distribution there doesn't seem to be any code which would have its behavior changed.
+
+Another possibility would be to keep the 'equals' semantics of 'switch', and introduce special syntax for the patterns. Perhaps using a 'match' keyword instead of 'case' when matching is wanted.
+The disadvantage with this is that there would be two different behaviors in the 'switch', it might be cleaner if it only does pattern matching branching.
+
+Ambiguity between patterns and expressions
+-------------------------------------------
+
+Normal expressions would be allowed as patterns, but it-block constructor, list and map literals would be interpreted as patterns instead of expressions. This might lead to confusion, for people and compilers. My feeling is that both would be able to handle that. But maybe some syntax could be used to explicitly mark out patterns, like preceding them with '#', or why not '§'.
+
+Reuse of 'as' keyword
+---------------------
+Might be undesirable.
+
+
+Further development
+===================
+- Statically check that switches cover all possible cases
+- Patterns in more places, for instance in assignments
+- Matching on tail of list
+
+
+Prototype
+=========
+As a project in a programming language course I am working on a prototype impelementation of this proposal. It will do a syntax tree transformation, turning any switch that contains object creation in the cases into a series of nested if statments. It will not implements guards or variable bindings. It this way I can avoid adding any syntax.
+
+Grammar
+=======
+
+Remove the rule:
+pre>
+<case> := "case" <expr> ":" <stmts>
+<pre
+
+New rules:
+pre>
+<case>           := "case" <casePattern> ":" <stmts>
+<casePattern>    := <patternExpr> ["if" "(" <expr> ")"]
+<patternExpr>    := <patternElem> ["as" <id>]
+<patternElem>    := <objectPattern> | <listPattern> | <mapPattern> | <expr> | "_"
+<objectPattern>  := <type> "{" (<memberPattern> <eos>)* "}"
+<memberPattern>  := <id> "=" <patternExpr> <eos>
+
+<listPattern>    := Similar to <list>, substitute <expr> for <patternExpr> in items 
+<mapPattern>     := Similar to <map>, substitute <expr> for <patternExpr> in values
+<pre

@@ -1,0 +1,18 @@
+
+Att tänka på
+============
+
+Måste göra sig av med dom closures som generarats it switchar.
+
+
+Alternativt tillvägagångssätt
+=============================
+Generera ett slags match spec-objekt. Det kan genomföra testet för just den switchen som det genererades från. Spara i en variabel i den omslutande klassen för metoden.
+
+Detta kunde vara samma objekt som används för att generera match-kod, fast den används direkt under körning. 
+
+
+Advantages with this change over matching with equals
+=====================================================
+    - No object creation
+    - No closure, so no anon class created

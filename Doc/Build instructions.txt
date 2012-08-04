@@ -1,0 +1,41 @@
+
+
+
+Gotchas:
+--------
+
+Set env var:
+java_home=/usr/lib/jvm/java-1.6.0-openjdk
+
+Bug in fanlauch when CLASSPATH is empty?
+
+Set in fan/etc/build:
+
+devHome=file:/home/jens/bin/fan/
+jdkHome=file:/usr/lib/jvm/java-6-openjdk/
+devHome
+
+Build with this command:
+{relHome}/bin/fan {relHome}/adm/bootstrap.fan
+
+Check for env vars that should not be set.
+
+Set to rel dir to build compiler in dev:
+FAN_SUBSTITUTE=/home/jens/bin/fan_dir
+export FAN_SUBSTITUTE
+
+----------------------
+
+Summary
+
+In summary, you want to make sure of a couple key things:
+
+    setup your rel installation and never touch it (consider it readonly)
+    ensure jdkHome and dotnetHome are configured in both rel and dev etc/build/config.props
+    ensure rel etc/build/config.props devHome points to your dev installation
+    make sure your substitutes are configured correctly:
+        on Unix make sure your FAN_SUBSTITUTE env points to the rel installation
+        on Windows make sure your dev etc/sys/config.props substitutes are configured
+    only put dev bin your path and always run your scripts from the dev installation
+    never use a working repo for bootstrap (use only the boot repo)
+

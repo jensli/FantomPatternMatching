@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>Build</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.dltk.core.scriptbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>com.xored.fanide.core.nature</nature>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>build.fan</name>
+			<type>1</type>
+			<locationURI>FANTOM_SRC/src/build/build.fan</locationURI>
+		</link>
+		<link>
+			<name>fan</name>
+			<type>2</type>
+			<locationURI>FANTOM_SRC/src/build/fan</locationURI>
+		</link>
+	</linkedResources>
+</projectDescription>

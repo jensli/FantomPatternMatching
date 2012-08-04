@@ -1,0 +1,1 @@
+../fantom_dir/src/testCompiler/build.fan

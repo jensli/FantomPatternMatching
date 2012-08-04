@@ -1,0 +1,3 @@
+
+
+Varje katalog innehåller en projekt-fil plus sym-länkar till dom kataloger och filer som det behöver använda. Främst src och build.fan.

@@ -1,0 +1,96 @@
+
+Random facts
+============
+
+x Getting it-const statements from an expr:
+Closure -> call -> code -> stmts[0] -> expr -> method -> code -> stmts
+
+x Switch is represented in the final syntax tree. Gets translated by the assembler to repeted if:s.
+
+x Change semantics of switch so that it allways does matching. If every case is normal equality: Use old switch. Otherwise: Generate nested if:s.
+
+Changes semantics some:
+- cases with literal objects will no longer compare with equals, only fields present will be compared.
+- No new objects will be created on literal object syntax cases
+
+x Searching the code in the Fantom distribution shows cases only on:
+- String
+- Int
+- enum
+- Type
+- null
+- zero() (Int returning function in StmtTest)
+
+x Parses as with-block except:
+- Unbound vars
+- as results in Bool, for bind-and-match elements
+
+x Unbound var gived "Unknown type 'id'" error in parser. If it is made to go thru parser, is that enough until we can transform it?
+
+x How to handle constructor objects:
+case Some( "Woo", 3 ): ...
+
+Little match solution
+=====================
+Do a match without bindings.
+
+No syntax changes. Semantic of case changes.
+
+Insert compilation step after CheckErrors that checks all switches wheather they contain literal objects. Change them into nested if:s. 
+
+Solution idea 1
+===============
+
+																																														
+Startning with a normal with-block initation expression,
+these steps need to be done:
+
+
+If value emit equals test
+If unbound id emit local var
+If decl obj emit local var with cast
+
+x Make local vars of unbound ids
+
+
+Resolve
+-------
+x Handle variable bindings in the expr
+For each unbound indentifier, generate a local variable that gets the value from that position in RHS expr.
+
+If variable not on its own but in an expression: Error. Every sub expression need to be either:
+- Sub-match
+- Value (expression or constant)
+- unbound identifier
+
+Solution:
+Change resolveVar to leave the UnknownVarExpr in the tree if it is in the context of a match.
+
+Put in a LocalDefStmt in code generation phase.
+
+
+
+
+
+Grammar
+=======
+<case> := "case" <expr> ":" <stmts>
+=>
+<case> := "case" <caseMatch> ":" <stmts>
+
+<caseMatch> := <matchExpr> ["if" "(" <expr> ")"]
+
+<matchExpr> := <matchElem> | <matchClass>
+
+<matchElem> := <expr> | <id> ["as" <id>]
+
+<matchClass> := <type> "{" (<matchMember> <eos>)* "}" ["as" <id>]
+
+<matchMember> := <id> "=" <matchExpr> <eos>
+
+
+
+
+
+
+
