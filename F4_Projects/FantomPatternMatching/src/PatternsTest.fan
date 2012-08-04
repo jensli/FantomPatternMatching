@@ -15,10 +15,10 @@ class PatternsTest : Test
         output      = CompilerOutputMode.transientPod
         mode        = CompilerInputMode.str
         srcStr      = src
-        srcStrLoc   = Loc( "Compiler_test_loc" )
+        srcStrLoc   = Loc("Compiler_test_loc")
       }
 
-    compiler := Compiler( input )
+    compiler := Compiler(input)
     output := compiler.compile
     
     return output.transientPod
@@ -27,16 +27,16 @@ class PatternsTest : Test
   
   Void testSimple()
   {
-    pod := compile( testPrg )
+    pod := compile(testPrg)
     
-    testObj := Exp.makeDef( "Woo", 2 )
+    testObj := Exp.makeDef("Woo", 2)
     t := pod.types.first
     
-    result1 := t.method( "test" ).call( testObj )
+    result1 := t.method("test").call(testObj)
     
     verifyEq("1", result1, "Matching")
      
-    result2 := t.method( "test" ).call("No Exp obj")
+    result2 := t.method("test").call("No Exp obj")
 
     verifyEq("Default", result2, "Not matching wrong type, default")
   }
