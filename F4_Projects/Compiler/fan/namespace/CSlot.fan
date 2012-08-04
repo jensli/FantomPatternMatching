@@ -220,6 +220,18 @@ mixin CMethod : CSlot
     return true
   }
 
+  **
+  ** Return if this is a constructor with an it-block as last parameter
+  **
+  // TODO j: Moved here from MethodDef 
+  Bool isItBlockCtor()
+  {
+    if (!isCtor || params.isEmpty) return false
+    lastArg := params.last.paramType.deref.toNonNullable as FuncType
+    if (lastArg == null || lastArg.params.size != 1) return false
+    return true
+  }
+
 }
 
 **************************************************************************

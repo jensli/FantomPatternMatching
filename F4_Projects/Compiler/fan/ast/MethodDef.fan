@@ -81,13 +81,14 @@ class MethodDef : SlotDef, CMethod
   **
   ** Return if this is a constructor with an it-block as last parameter
   **
-  Bool isItBlockCtor()
-  {
-    if (!isCtor || params.isEmpty) return false
-    lastArg := params.last.paramType.deref.toNonNullable as FuncType
-    if (lastArg == null || lastArg.params.size != 1) return false
-    return true
-  }
+  // TODO j: Moved to CMethod
+//  Bool isItBlockCtor()
+//  {
+//    if (!isCtor || params.isEmpty) return false
+//    lastArg := params.last.paramType.deref.toNonNullable as FuncType
+//    if (lastArg == null || lastArg.params.size != 1) return false
+//    return true
+//  }
 
   **
   ** Make and add a MethodVar for a local variable.

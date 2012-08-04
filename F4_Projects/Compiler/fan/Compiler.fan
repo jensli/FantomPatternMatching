@@ -98,6 +98,7 @@ class Compiler
     Normalize(this).run
     ResolveExpr(this).run
     CheckErrors(this).run
+    ExpandPatterns(this).run
     CheckParamDefs(this).run
     LocaleProps(this).run
     CompileJs(this).run
