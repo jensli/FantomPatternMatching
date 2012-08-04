@@ -1,6 +1,6 @@
 using compiler_new
 
-class PatternsTest
+class PatternsTest : Test
 {
   
   Pod compile(Str src)
@@ -25,24 +25,20 @@ class PatternsTest
   }
 
   
-  Void test()
+  Void testSimple()
   {
-    echo( "Start" )
     pod := compile( testPrg )
     
     testObj := Exp.makeDef( "Woo", 2 )
     t := pod.types.first
-    result := t.method( "test" ).call( testObj )
-    echo( "Result 1: " + result )
+    
+    result1 := t.method( "test" ).call( testObj )
+    
+    verifyEq("1", result1, "Matching")
      
-    result = t.method( "test" ).call( "No Exp obj" )
-    echo( "Result 2: " + result )
-     
-    echo( "Stop" )
-  }
-  
-  Void main() {
-    test
+    result2 := t.method( "test" ).call("No Exp obj")
+
+    verifyEq("Default", result2, "Not matching wrong type, default")
   }
   
   static const Str testPrg :=
@@ -122,21 +118,3 @@ class Exp {
     return name == other.name && age == other.age
   }
 }
-
-
-//class Exp {
-//  Str name
-//  Int age
-//
-//  new make(|This| init) {
-//    init(this)
-//  }
-//  
-//  static Str test(Obj? o) {
-//    switch (o) {
-//      case Exp{name = \"woo\"; age = 3}: return \"1\"
-//    }
-//    
-//    return \"No match\"
-//  }
-//}
