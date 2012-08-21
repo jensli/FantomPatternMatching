@@ -16,7 +16,7 @@ class Build : BuildPod
 {
   new make()
   {
-    podName    = "compiler"
+    podName    = "compiler_new"  // TODO: Change back name
     summary    = "Fantom compiler"
     meta       = ["org.name":     "Fantom",
                   "org.uri":      "http://fantom.org/",

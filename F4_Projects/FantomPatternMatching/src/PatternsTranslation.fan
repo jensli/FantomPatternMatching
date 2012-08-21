@@ -26,7 +26,7 @@ class PatternsTranslation
     
 //    switch ( o ) {
 //      case Comp{name = "woo"; age as a; comp = Comp{age = 3} as c} if (a > 2): 
-//          echo( "Patt fields" )
+//          echo( "Match pattern 1: ${a} ${c}" )
 //      case Other{ ... }: ... 
 //      case ...
 //      default:
@@ -36,13 +36,13 @@ class PatternsTranslation
     
     hasMatched := false
     
+    // Case 1 start
     if ( !hasMatched ) {
       
-      // Case 1 start
-      
+      // Pattern 1
       o1 := o as Comp // Comp{}
       
-      if ( o1 != null ) // some value   
+      if ( o1 != null )   
       {
         if ( o1.name == "woo" )
         {
@@ -58,16 +58,14 @@ class PatternsTranslation
             {
               if ( a > 3 ) {
                 // Matches!
-                // Here we can use all containing var if we want to
+                // Here all vars from containing scopes can be used
                 
                 hasMatched = true
               }
             }
           }
         }
-      }
-      
-      // Case 1 end
+      } // Case 1 end
 
       // Case 2 start
       if ( !hasMatched ) {

@@ -1,11 +1,17 @@
+Pattern matching in switch proposal
+
 Intro
 =====
 
-A very useful feature in many functional languages is pattern matching. This makes it very easy and concise to write some kind of logic that can be pretty hairy to express with normal 'if':s and 'switch':s.
+A very useful feature in many functional languages is pattern matching. This makes it very easy and concise to write some kind of logic that can be pretty hairy to express with normal if:s and switch:s.
 
-I propose adding pattern matching capabilities to the Fantom 'switch' statement in a similar way to how it looks in Scala.
+I propose adding pattern matching capabilities to the Fantom switch statement in a way that resemble how it looks in Scala.
 
-For a description of the Scala model have a look at the [Programming Scala]`http://www.artima.com/pins1ed/case-classes-and-pattern-matching.html` book.
+UPDATE: This proposal tries to introduce a unified way of switching on the type and contents of objects, instead of making smaller and more directed changes.
+
+For a description of the Scala model have a look at the [Programming in Scala]`http://www.artima.com/pins1ed/case-classes-and-pattern-matching.html` book.
+
+Pattern matching would be added for lists, maps, and the type and fields of objects using the it-block style constructor syntax.
 
 Example
 =======
@@ -36,8 +42,6 @@ Void patternExample(Animal o)
 }
 <pre
 
-'TODO: Update text to code'
-
 The first 'case' branch is chosen if 'o' is a object of type 'Turtle', its 'field2' has value '2', and its field 'parent' has an object of type 'Frog' as its value. The 'par' variable introduced with the 'as' keyword can be used only in that branch.
 
 If that pattern doesn't match, the list patterns in the second 'case' is tried. It matches if 'o' is a two elem list, with '1' as its first elem and any second elem. '_' is the wildcard, "don't care" pattern. It is bound to the variable 'snd'.
@@ -52,9 +56,9 @@ Details of proposal
 
 The current switch works by comparing the value of an expression in each 'case' with the objects 'equals' method. This would change so that after each 'case' a pattern is expected instead of an expression. The object that is switched on will be checked for a match against each pattern in turn.
 
-For simple literals this would means the same thing as a check with 'equals', but more complex patterns are also allowed. 
+Simple expressions are valid patterns. They will get evaluated and their value compared with 'equals' in the switch.
 
-After the 'case' keyword, list literals, map literals and it-block constructors will be interpreted as patterns, not as expressions creating objects.
+But after the 'case' keyword, list literals, map literals and it-block constructors will be interpreted as patterns, not as expressions creating objects.
 
 The value that is switched on is checked to see if it matches the structure of the pattern. The 'case' branch associated with the first matching pattern is executed.
 
@@ -84,11 +88,11 @@ Implementation
 ==============
 The semantics of a switch in which only simple literals are used remain the same as in the current switch. It can be compiled in the same way as now.
 
-A possible implementation for a switch with complex patterns is to translate it into a number of nested 'if' statements. No fcode changes would be needed. 
+A possible implementation for a switch with complex patterns is to translate it into a number of nested if statements. No fcode changes would be needed. 
 
 This file demonstrates what the translation might look:
  
-`https://github.com/jensli/Misc/blob/master/fan/PatternsTranslation.fan`
+`https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/FantomPatternMatching/src/PatternsTranslation.fan`
 
 Open problems
 =============
@@ -116,16 +120,26 @@ Might be undesirable.
 Further development
 ===================
 - Statically check that switches cover all possible cases
-- Patterns in more places, for instance in assignments
+- Patterns in more places, for instance for destructive assignments
 - Matching on tail of list
-
+- UPDATE: Matching on the type of value types, like 'Int'
+- UPDATE: Matching on more types, such as 'Range' and 'Time'
 
 Prototype
 =========
-As a project in a programming language course I am working on a prototype impelementation of this proposal. It will do a syntax tree transformation, turning any switch that contains object creation in the cases into a series of nested if statments. It will not implements guards or variable bindings. It this way I can avoid adding any syntax.
+As a project in a programming language course I am working on a prototype implementation of this proposal. It will do a syntax tree transformation, turning any switch that contains object creation in the cases into a series of nested if statements. It will not implements guards or variable bindings. In this way I can avoid adding any new syntax.
 
-Grammar
-=======
+My initial attempt can be viewed here:
+
+`https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/Compiler/fan/steps/ExpandPatterns.fan`
+
+It currently translates a very simple switch into executable code, as seen in this test case:
+
+`https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/FantomPatternMatching/src/PatternsTest.fan`
+
+
+Grammar draft
+=============
 
 Remove the rule:
 pre>
@@ -144,3 +158,10 @@ pre>
 <listPattern>    := Similar to <list>, substitute <expr> for <patternExpr> in items 
 <mapPattern>     := Similar to <map>, substitute <expr> for <patternExpr> in values
 <pre
+
+
+Conclusion
+==========
+This proposal brings pretty big changes that probably isn't trivial to implement. But the usefulness of pattern matching in languages like Erlang and Haskell makes me believe it would be worth it. 
+
+It might be little tricky to wrap one's head around this when first confronted with it, but I think the idea of writing logic by matching values against patterns is a really simple, beautiful and expressive one, which is why I think it would fit in nicely in Fantom. 

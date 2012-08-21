@@ -28,6 +28,9 @@ class ExprSimpl
     }
   }
   
+  
+
+  
 //  Corresponding Scala code:
 //
 //  scala> simplifyTop(UnOp("-", UnOp("-", Var("x"))))
@@ -116,6 +119,7 @@ const class Expr {
   }
 }
 
+
 const class Var : Expr {
   const Str? name
   
@@ -142,6 +146,8 @@ const class UnOp : Expr {
   }
 }
 
+
+
 const class BinOp : Expr {
   const Str? opr
   const Expr? left
@@ -154,5 +160,32 @@ const class BinOp : Expr {
   }
 }
 
-  
-  
+//  Expr simplify( Expr obj )
+//  {
+//    switch (obj) {
+//      case UnOp{opr = "-", arg = UnOp{opr = "-", arg = _ as iArg}}      :
+//          return iArg
+//      default: return e
+//    }
+//  }    
+//    
+//
+//  Expr simplify( Expr obj )
+//  {
+//    if (obj is UnOp) {
+//      if (obj.opr == "-" ) {
+//        nested := obj.opr
+//        if (nested is UnOp) {
+//          return nested.arg
+//        }
+//      }
+//    } else {
+//      return obj
+//    }
+//  }
+      
+    
+ 
+
+
+

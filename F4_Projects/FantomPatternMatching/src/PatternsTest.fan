@@ -43,7 +43,7 @@ class PatternsTest : Test
   
   static const Str testPrg :=
      """
-        using fantom_pattern_matching
+        using fantomPatternMatching
 
         class TestRunner
         {

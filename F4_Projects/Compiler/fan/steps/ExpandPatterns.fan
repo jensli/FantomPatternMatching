@@ -48,9 +48,7 @@ class ExpandPatterns : CompilerStep
     
     swch := (SwitchStmt) stmt
     
-    doMatch := swch.cases.any { it.cases.any { isItBlockCtor(it) } }
-    
-    if (doMatch) {
+    if (swch.cases.any { it.cases.any { isItBlockCtor(it) } }) {
       dump("Match switch found")
       return SwitchSubs(swch, this).run
     } else {
@@ -69,12 +67,20 @@ class ExpandPatterns : CompilerStep
 
 internal class SwitchSubs
 {
+  // Variable that is set when a pattern has matched, and checked before trying the next
+  // pattern
   private MethodVar? hasMatched
+  
+  // Holds the value of evaluating the expression that is switched on
   private MethodVar? switchObjVar
   
+  // The running compiler step
   private ExpandPatterns step
+
+  // The original swich statment
   private SwitchStmt? swch
   
+  // An ID nr for sub patterns variable names
   private Int objVarNr := 0
   
   new make(SwitchStmt swch, ExpandPatterns step)
@@ -127,8 +133,9 @@ internal class SwitchSubs
   }
 
   **
-  ** Recurses over all cases in a switch
+  ** Recurses over all cases in a switch, returning test statments for each case. 
   ** 
+  **  
   private Stmt[] handleCases(Case[] cases)
   {
     // Emit hasMatched test
@@ -159,7 +166,8 @@ internal class SwitchSubs
     hasMatchedTest.trueBlock.loc = testExpr.loc 
 
     // Make test for pattern in this case
-    hasMatchedTest.trueBlock.addAll(makePatternTest(testExpr, cse))
+    hasMatchedTest.trueBlock.addAll(
+      makePatternTest(testExpr, LocalVarExpr(swch.loc, switchObjVar), cse))
     
     // Handle next case
     hasMatchedTest.trueBlock.addAll(handleCases(cases[1..-1].ro))
@@ -167,13 +175,20 @@ internal class SwitchSubs
     return [hasMatchedTest]
   }
   
-  private Stmt[] makePatternTest(Expr testExpr, Case cse)
+  **
+  ** Checks the kind of pattern and calls the corresponding method. Called recursivly
+  ** for sub patterns. Returns test statement.
+  **
+  ** testExpr: Expression describing the pattern
+  ** matchObjExpr: Value to match against
+  **  
+  private Stmt[] makePatternTest(Expr testExpr, Expr matchObjExpr, Case cse)
   {
     result := Stmt[,]
 
     // Emit test for ctor pattern
     if (ExpandPatterns.isItBlockCtor(testExpr)) {
-      result.addAll(makeCtorTest(testExpr, cse, LocalVarExpr(swch.loc, switchObjVar)))
+      result.addAll(makeCtorTest(testExpr, matchObjExpr, cse))
     }
     // TODO: Emit test for other kinds of patterns
 
@@ -181,9 +196,9 @@ internal class SwitchSubs
   }
 
   **
-  ** Emit if statement for object creation pattern
+  ** Returns test statements for object creation pattern
   ** 
-  private Stmt[] makeCtorTest(CallExpr ctorCall, Case cse, Expr matchObjExpr)
+  private Stmt[] makeCtorTest(CallExpr ctorCall, Expr matchObjExpr, Case cse)
   {
     // Create match object
     matchObjDef := LocalDefStmt(cse.loc, ctorCall.ctype, "matchObj\$" + objVarNr++)
@@ -194,7 +209,7 @@ internal class SwitchSubs
       TypeCheckExpr(swch.loc, ExprId.asExpr, matchObjExpr, ctorCall.ctype))
     
     // Emit test if match obj is right type for this clause
-    typeTest := IfStmt(ctorCall.loc,
+    typeTest := IfStmt(ctorCall.loc,  
       UnaryExpr(
         ctorCall.loc,
         ExprId.cmpNotNull,
@@ -202,7 +217,8 @@ internal class SwitchSubs
         LocalVarExpr(ctorCall.loc, matchObjVar)),
       Block(ctorCall.loc))
     
-    // Get the member assignment expressions from the it block closure.
+    // Get the member assignment expressions from the it block closure,
+    // removing the return statment at the end.
     membs := ((((ctorCall.args.first as ClosureExpr).call.code.stmts.first as ExprStmt)
                       .expr as CallExpr).method as MethodDef).code.stmts[0..-2]
     
@@ -224,6 +240,13 @@ internal class SwitchSubs
       return cse.block.stmts
     }
     
+    memTests := membs.map {  
+//      makePatternTest(
+      it
+    }
+    memAssign := membs.first
+    dummyInspect(memAssign)
+    
     return makeMembTest(cse, membs[1..-1])
     
         // Emit test if match obj is right type for this clause
@@ -241,8 +264,19 @@ internal class SwitchSubs
 }
 
 
-abstract class MatchSpec {
+class MatchTest {
+  Stmt[] test
+  Stmt[] extSpot
+  
+  new make(Stmt[] test, Stmt[] extSpot) {
+    this.test = test
+    this.extSpot = extSpot
+  }
+}
 
+
+
+abstract class MatchSpec {
 }
 
 class ObjSpec : MatchSpec
