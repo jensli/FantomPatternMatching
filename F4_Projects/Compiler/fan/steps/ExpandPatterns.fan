@@ -89,6 +89,11 @@ internal class SwitchSubs
     this.swch = swch
   }
   
+  private Int nextId() {
+    return objVarNr++
+  }
+  
+  
   Void dump( Obj? s ) {
     step.log.debug("SwitchSubs: " + s)
   }
@@ -138,7 +143,7 @@ internal class SwitchSubs
   **  
   private Stmt[] handleCases(Case[] cases)
   {
-    // Emit hasMatched test
+    // Create hasMatched test
     hasMatchedTest := IfStmt(swch.loc,
             UnaryExpr(swch.loc, // TODO: Set better location
                 ExprId.boolNot, 
@@ -154,55 +159,93 @@ internal class SwitchSubs
         hasMatchedTest.trueBlock = swch.defaultBlock
         return [hasMatchedTest]
       } else {
-        // If no def block just return
-        return [,]
+        return [,] // If no def block just return
       }
     }
     
     cse := cases.first
-    testExpr := cse.cases.first // TODO: Handle multiple tests for one case
+    testExpr := cse.cases.first // TODO: Handle multiple cases for one branch
 
-    // Set a more precise loc
-    hasMatchedTest.trueBlock.loc = testExpr.loc 
+    hasMatchedTest.trueBlock.loc = testExpr.loc // Set a more precise loc 
+    
+    hasMatchedAssign := ExprStmt(
+      BinaryExpr.makeAssign(
+          LocalVarExpr(swch.loc, hasMatched),
+          LiteralExpr.makeTrue(swch.loc, step.ns)))
+//    // Make test for pattern in this case
+//    hasMatchedTest.trueBlock.addAll(
+//      makePatternTest(testExpr, LocalVarExpr(swch.loc, switchObjVar), cse))
 
     // Make test for pattern in this case
-    hasMatchedTest.trueBlock.addAll(
-      makePatternTest(testExpr, LocalVarExpr(swch.loc, switchObjVar), cse))
+    tests := makePatternTest(testExpr, LocalVarExpr(swch.loc, switchObjVar), cse)
     
+    // Add the branch code, and the hasMatch = true statement
+    if (!cse.block.isExit) tests.last.extSpot.add(hasMatchedAssign)
+
+    tests.last.extSpot.addAll(cse.block.stmts)
+
+    // Put each test in the previous ones extSpot
+    tests.each |testStmt, i| {
+      if (i == 0) return
+      tests[i-1].extSpot.addAll(testStmt.testStmts)
+    }
+    
+    hasMatchedTest.trueBlock.addAll(tests[0].testStmts)
+
     // Handle next case
     hasMatchedTest.trueBlock.addAll(handleCases(cases[1..-1].ro))
     
     return [hasMatchedTest]
   }
   
+  
   **
   ** Checks the kind of pattern and calls the corresponding method. Called recursivly
   ** for sub patterns. Returns test statement.
   **
   ** testExpr: Expression describing the pattern
-  ** matchObjExpr: Value to match against
+  ** matchObjExpr: Value to match against. Can only be used in one place, should be bould
+  **    to var if used more times.
+  ** cse: The current case branch
   **  
-  private Stmt[] makePatternTest(Expr testExpr, Expr matchObjExpr, Case cse)
+  private MatchTest[] makePatternTest(Expr testExpr, Expr matchObjExpr, Case cse)
   {
-    result := Stmt[,]
-
+    result := MatchTest[,]
+    
     // Emit test for ctor pattern
-    if (ExpandPatterns.isItBlockCtor(testExpr)) {
-      result.addAll(makeCtorTest(testExpr, matchObjExpr, cse))
+    if (ExpandPatterns.isItBlockCtor(testExpr))
+    {
+      return makeCtorTest(testExpr, matchObjExpr, cse)
     }
+    else
+    {
+      return makeSimpleTest(testExpr, matchObjExpr, cse)
+    }
+    
     // TODO: Emit test for other kinds of patterns
-
-    return result
+    
+    throw CompilerErr("Unknown pattern", cse.loc)
+  }
+  
+  private MatchTest[] makeSimpleTest(Expr testExpr, Expr matchObjExpr, Case cse)
+  {
+    testStmt := IfStmt(
+      testExpr.loc,  
+      CallExpr.makeWithMethod(cse.loc, 
+        testExpr, step.ns.objType.method("equals"), [matchObjExpr]),
+      Block(testExpr.loc))
+    
+    return [MatchTest([testStmt], testStmt.trueBlock.stmts)]
   }
 
   **
   ** Returns test statements for object creation pattern
   ** 
-  private Stmt[] makeCtorTest(CallExpr ctorCall, Expr matchObjExpr, Case cse)
+  private MatchTest[] makeCtorTest(CallExpr ctorCall, Expr matchObjExpr, Case cse)
   {
     // Create match object
-    matchObjDef := LocalDefStmt(cse.loc, ctorCall.ctype, "matchObj\$" + objVarNr++)
-    MethodVar matchObjVar := step.curMethod.addLocalVarForDef(matchObjDef, step.curMethod.code)
+    matchObjDef := LocalDefStmt(cse.loc, ctorCall.ctype, "matchObj\$" + nextId)
+    matchObjVar := step.curMethod.addLocalVarForDef(matchObjDef, step.curMethod.code)
     
     matchObjDef.init = BinaryExpr.makeAssign(
       LocalVarExpr(swch.loc, matchObjVar),
@@ -224,40 +267,38 @@ internal class SwitchSubs
     
     dummyInspect(membs) // TODO: Remove
  
-    // Check all fields in the ctor clause
-    typeTest.trueBlock.addAll(makeMembTest(cse, membs))
-    
-    return [matchObjDef, typeTest]
+//    // Check all fields in the ctor clause
+//    typeTest.trueBlock.addAll(makeMembTest(cse, membs))
+    return [MatchTest([matchObjDef, typeTest], typeTest.trueBlock.stmts)]
+      .addAll(makeMembTest(matchObjVar, membs, cse))
   }
   
   static Obj? dummyInspect( Obj? o ) {
     return o
   }
 
-  private Stmt[] makeMembTest(Case cse, Stmt[] membs)
+  private MatchTest[] makeMembTest(MethodVar matchObj, Stmt[] membs, Case cse)
   {
     if (membs.isEmpty) {
-      return cse.block.stmts
+      return [,]
     }
     
-    memTests := membs.map {  
-//      makePatternTest(
-      it
-    }
-    memAssign := membs.first
-    dummyInspect(memAssign)
+    memTests := membs.map(|Stmt stmt -> MatchTest[]|
+    {
+      assignExpr := (stmt as ExprStmt).expr as BinaryExpr
+      if (assignExpr == null || assignExpr.id != ExprId.assign) {
+        throw CompilerErr("Only assignment exprs in patterns", stmt.loc)
+      }
+      
+      fieldExpr := assignExpr.lhs as FieldExpr
+      
+      return makePatternTest(
+        FieldExpr(fieldExpr.loc, LocalVarExpr(fieldExpr.loc, matchObj), fieldExpr.field),
+        assignExpr.rhs,
+        cse)
+    })
     
-    return makeMembTest(cse, membs[1..-1])
-    
-        // Emit test if match obj is right type for this clause
-//    typeTest := IfStmt(ctorCall.loc,
-//      UnaryExpr(
-//        ctorCall.loc,
-//        ExprId.cmpNotNull,
-//        Token.notEq,
-//        LocalVarExpr(ctorCall.loc, matchObjVar)),
-//      Block(ctorCall.loc))
-
+    return memTests.flatten
   }
 
 
@@ -265,11 +306,11 @@ internal class SwitchSubs
 
 
 class MatchTest {
-  Stmt[] test
+  Stmt[] testStmts
   Stmt[] extSpot
   
   new make(Stmt[] test, Stmt[] extSpot) {
-    this.test = test
+    this.testStmts = test
     this.extSpot = extSpot
   }
 }

@@ -48,6 +48,7 @@ class PatternsTranslation
         {
           a := o1.age
 
+          // Start nested subpattern
           o2 := o1.comp as Comp
       
           if ( o2 != null )
@@ -76,10 +77,16 @@ class PatternsTranslation
         
         // Case 3 start
         if ( !hasMatched ) {
+          
           // ...
           
-          // Case 3 end
-        }
+          // Default start
+          if ( !hasMatched ) {
+            // Default block
+            
+          }
+          
+        } // Case 3 end
       }
     }
     

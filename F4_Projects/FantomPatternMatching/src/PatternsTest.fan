@@ -49,13 +49,14 @@ class PatternsTest : Test
         {
           static Str test(Obj? o)
           {
+            result := "Init"
             switch (o) {
-              case Exp{name = "Woo"; age = 3}: return "1"
+              case Exp{name = "Woo"; age = 3}: result = "3"
               default:
                 return "Default"
             }
             
-            return "No match"
+            return result
           }
   
           static Str expected(Obj? o)
