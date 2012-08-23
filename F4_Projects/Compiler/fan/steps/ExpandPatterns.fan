@@ -58,9 +58,7 @@ class ExpandPatterns : CompilerStep
   
   static Bool isItBlockCtor(Expr expr)
   {
-    if (expr.id != ExprId.call) return false
-    call := expr as CallExpr
-    return call.method.isItBlockCtor
+    return expr.id == ExprId.call && (expr as CallExpr).method.isItBlockCtor
   }
 
 }
@@ -128,7 +126,7 @@ internal class SwitchSubs
   {
     // Create hasMatched test
     hasMatchedTest := IfStmt(swch.loc,
-            UnaryExpr(swch.loc, // TODO: Set better location
+            UnaryExpr(swch.loc,
                 ExprId.boolNot, 
                 Token.bang,
                 LocalVarExpr(swch.loc, hasMatchedVar)), 
@@ -147,14 +145,16 @@ internal class SwitchSubs
     }
     
     cse := cases.first
-    testExpr := cse.cases.first // TODO: Handle multiple cases for one branch
+    
+    patternExpr := cse.cases.first // TODO: Handle multiple cases for one branch
 
-    hasMatchedTest.trueBlock.loc = testExpr.loc // Set a more precise loc 
+    hasMatchedTest.loc = cse.loc  // Set a more precise loc
+    hasMatchedTest.trueBlock.loc = patternExpr.loc 
     
 //    // Make test for pattern in this case
 
     // Make test for pattern in this case
-    tests := makePatternTest(testExpr, LocalVarExpr(swch.loc, switchObjVar), cse)
+    tests := makePatternTest(patternExpr, LocalVarExpr(swch.loc, switchObjVar), cse)
     
     // Add the branch code, and the hasMatch = true statement, if this isnt a return
     if (!cse.block.isExit)
@@ -191,40 +191,81 @@ internal class SwitchSubs
   ** Checks the kind of pattern and calls the corresponding method. Called recursivly
   ** for sub patterns. Returns test statement.
   **
-  ** testExpr: Expression describing the pattern
+  ** patternExpr: Expression describing the pattern
   ** matchObjExpr: Value to match against. Can only be used in one place, should be bould
   **    to var if used more times.
   ** cse: The current case branch
   **  
-  private MatchTest[] makePatternTest(Expr testExpr, Expr matchObjExpr, Case cse)
+  private MatchTest[] makePatternTest(Expr patternExpr, Expr matchObjExpr, Case cse)
   {
-    result := MatchTest[,]
-    
-    // Emit test for ctor pattern
-    if (ExpandPatterns.isItBlockCtor(testExpr))
-    {
-      return makeCtorTest(testExpr, matchObjExpr, cse)
-    }
+    // Test for object pattern
+    if (ExpandPatterns.isItBlockCtor(patternExpr))
+      return makeCtorTest((CallExpr) patternExpr, matchObjExpr, cse)
+    else if (patternExpr.id == ExprId.listLiteral)
+      return makeListTest((ListLiteralExpr) patternExpr, matchObjExpr, cse)
     else
-    {
-      return makeSimpleTest(testExpr, matchObjExpr, cse)
-    }
+      return makeSimpleTest(patternExpr, matchObjExpr, cse)
+  }
+
+  private MatchTest[] makeListTest(ListLiteralExpr patternExpr, Expr matchObjExpr, Case cse)
+  {
+    // Create match object
+    matchObjVar := step.curMethod.addLocalVar(patternExpr.ctype, null, step.curMethod.code)
+    matchObjDef := BinaryExpr.makeAssign(
+      LocalVarExpr(swch.loc, matchObjVar),
+      TypeCheckExpr(swch.loc, ExprId.asExpr, matchObjExpr, patternExpr.ctype)).toStmt
     
-    // TODO: Emit test for other kinds of patterns
+    // Test statement for if match obj is right type
+    typeTest := IfStmt(patternExpr.loc,
+      UnaryExpr(
+        patternExpr.loc,
+        ExprId.cmpNotNull,
+        Token.notEq,
+        LocalVarExpr(patternExpr.loc, matchObjVar)),
+      Block(patternExpr.loc))
+
+    // Test is match obj has same size as pattern
+    sizeTest := IfStmt(patternExpr.loc,
+      ShortcutExpr.makeBinary(
+        FieldExpr( 
+          patternExpr.loc, 
+          LocalVarExpr(patternExpr.loc, matchObjVar),
+          matchObjVar.ctype.field("size")),
+        Token.eq,
+        LiteralExpr(patternExpr.loc, ExprId.intLiteral, step.ns.intType, patternExpr.vals.size)),
+      Block(patternExpr.loc))
     
-    throw CompilerErr("Unknown pattern", cse.loc)
+    // Check all fields in the ctor clause
+    tests := patternExpr.vals.map(|Expr expr, Int i -> MatchTest[]|
+      {
+        // Recursive call for sub pattern
+        return makePatternTest(
+          expr,
+          ShortcutExpr.makeGet(expr.loc,
+            LocalVarExpr(expr.loc, matchObjVar),
+            LiteralExpr(expr.loc, ExprId.intLiteral, step.ns.intType, i)) {
+              method = step.ns.listType.method(op.methodName)
+              ctype = step.ns.objType
+            },
+          cse)
+        
+        return [,]
+      }).flatten
+    
+    return [MatchTest([matchObjDef, typeTest], typeTest.trueBlock.stmts),
+            MatchTest([sizeTest], sizeTest.trueBlock.stmts)]
+      .addAll(tests)
   }
   
-  private MatchTest[] makeSimpleTest(Expr testExpr, Expr matchObjExpr, Case cse)
+  private MatchTest[] makeSimpleTest(Expr patternExpr, Expr matchObjExpr, Case cse)
   {
     testStmt := IfStmt(
-      testExpr.loc,  
-      ShortcutExpr(matchObjExpr, Token.eq, testExpr) {
+      patternExpr.loc,  
+      ShortcutExpr(matchObjExpr, Token.eq, patternExpr) {
           method = step.ns.objType.method(ShortcutOp.eq.methodName)
-//          method = testExpr.ctype.operators.find(ShortcutOp.eq.methodName).first
-          name = method.name
+//          method = patternExpr.ctype.operators.find(ShortcutOp.eq.methodName).first
         },
-        Block(testExpr.loc))
+        Block(patternExpr.loc))
 
     return [MatchTest([testStmt], testStmt.trueBlock.stmts)]
   }
@@ -240,7 +281,7 @@ internal class SwitchSubs
       LocalVarExpr(swch.loc, matchObjVar),
       TypeCheckExpr(swch.loc, ExprId.asExpr, matchObjExpr, ctorCall.ctype)).toStmt
     
-    // Emit test if match obj is right type for this clause
+    // Test statement for if match obj is right type
     typeTest := IfStmt(ctorCall.loc,  
       UnaryExpr(
         ctorCall.loc,
