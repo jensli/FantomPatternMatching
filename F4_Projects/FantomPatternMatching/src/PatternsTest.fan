@@ -29,16 +29,21 @@ class PatternsTest : Test
   {
     pod := compile(testPrg)
     
-    testObj := Exp.makeDef("Woo", 2)
     t := pod.types.first
     
-    result1 := t.method("test").call(testObj)
-    
-    verifyEq("1", result1, "Matching")
+    verifyEq("1", 
+      t.method("test").call(Exp("Woo", 3)),
+      "Matching")
      
-    result2 := t.method("test").call("No Exp obj")
+    verifyEq("Default", 
+       t.method("test").call("No Exp obj"),
+      "Not matching wrong type, default")
 
-    verifyEq("Default", result2, "Not matching wrong type, default")
+    verifyEq("2", 
+       t.method("test").call(Exp("Woo", 3, Exp("Waa", 2))))
+
+    verifyEq("Default", 
+       t.method("test").call(Exp("Woo", 2, Exp("Waa", 3))))
   }
   
   static const Str testPrg :=
@@ -47,11 +52,15 @@ class PatternsTest : Test
 
         class TestRunner
         {
+  
+          @DumpAstBefore
+          @DumpAstAfter
           static Str test(Obj? o)
           {
             result := "Init"
             switch (o) {
-              case Exp{name = "Woo"; age = 3}: result = "3"
+              case Exp{child = Exp{age = 2}}: result = "2"
+              case Exp{name = "Woo"; age = 3}: result = "1"
               default:
                 return "Default"
             }
@@ -59,8 +68,10 @@ class PatternsTest : Test
             return result
           }
   
+          // @DumpAstBefore
           static Str expected(Obj? o)
           {
+            result := "Init"
             switchObj := o
             hasMatched := false
             
@@ -69,14 +80,14 @@ class PatternsTest : Test
               if (matchObj0 != null) {
                  // case statement
                  hasMatched = true
-                 return "1"
+                 result = "1"
               }
               if (!hasMatched) {
                 return "Default"
               }
             }
   
-            return "No match"
+            return result
   
           }
         }
@@ -85,14 +96,21 @@ class PatternsTest : Test
   
 }
 
+** Debug print AST before pattern expansion
+facet class DumpAstBefore {}
+** Debug print AST after pattern expansion
+facet class DumpAstAfter {}
+
 class Exp {
   Str name := "<empty>"
   Int age := 0
+  Exp? child
 
-  new makeDef(Str name, Int age)
+  new makeDef(Str name, Int age, Exp? child := null)
   {
     this.name = name
     this.age = age
+    this.child = child
   }
     
   new make(|This| init) {
