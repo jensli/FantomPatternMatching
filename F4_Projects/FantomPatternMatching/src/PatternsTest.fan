@@ -42,8 +42,17 @@ class PatternsTest : Test
     verifyEq("2", 
        t.method("test").call(Exp("Woo", 3, Exp("Waa", 2))))
 
-    verifyEq("Default", 
+    verifyEq("Default",
        t.method("test").call(Exp("Woo", 2, Exp("Waa", 3))))
+
+    verifyEq("3", 
+       t.method("test").call([1, 2]))
+
+    verifyEq("Default", 
+       t.method("test").call([1, 1]))
+  
+    verifyEq("Default", 
+       t.method("test").call([1, 2, 3]))
   }
   
   static const Str testPrg :=
@@ -60,7 +69,8 @@ class PatternsTest : Test
             result := "Init"
             switch (o) {
               case Exp{child = Exp{age = 2}}: result = "2"
-              case Exp{name = "Woo"; age = 3}: result = "1"
+              case Exp{name = "Woo"; age = 3}: return "1"
+              case [1, 2]: result = "3"
               default:
                 return "Default"
             }

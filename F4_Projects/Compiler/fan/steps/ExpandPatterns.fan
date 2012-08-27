@@ -48,6 +48,7 @@ class ExpandPatterns : CompilerStep
     
     swch := (SwitchStmt) stmt
     
+    // TODO: Test for list literals also
     if (swch.cases.any { it.cases.any { isItBlockCtor(it) } }) {
       dump("Match switch found")
       return SwitchSubs(swch, this).run
@@ -58,7 +59,8 @@ class ExpandPatterns : CompilerStep
   
   static Bool isItBlockCtor(Expr expr)
   {
-    return expr.id == ExprId.call && (expr as CallExpr).method.isItBlockCtor
+    // TODO: This test seems dubious
+    return expr.id == ExprId.call && ((CallExpr) expr).method.isItBlockCtor
   }
 
 }
@@ -92,7 +94,7 @@ internal class SwitchSubs
   }
   
   
-  Void dump( Obj? s ) {
+  Void dump(Obj? s) {
     step.log.debug("SwitchSubs: " + s)
   }
 
@@ -144,15 +146,18 @@ internal class SwitchSubs
       }
     }
     
+    // Recursive case, handle first case, that handle rest in recursive call
     cse := cases.first
     
-    patternExpr := cse.cases.first // TODO: Handle multiple cases for one branch
+     // TODO: Handle multiple cases for one branch
+    if (cse.cases.size > 1)
+      throw step.err("Only one case allowed in pattern switches", cse.cases[1].loc)
+    
+    patternExpr := cse.cases.first
 
     hasMatchedTest.loc = cse.loc  // Set a more precise loc
     hasMatchedTest.trueBlock.loc = patternExpr.loc 
     
-//    // Make test for pattern in this case
-
     // Make test for pattern in this case
     tests := makePatternTest(patternExpr, LocalVarExpr(swch.loc, switchObjVar), cse)
     
@@ -170,18 +175,15 @@ internal class SwitchSubs
     tests.last.extSpot.addAll(cse.block.stmts)
 
     // Put each test in the previous ones extSpot
-    tests.each |testStmt, i| {
-      if (i == 0) return
-      tests[i-1].extSpot.addAll(testStmt.testStmts)
+    (0..tests.size-2).each |i| {
+      tests[i].extSpot.addAll(tests[i+1].testStmts)
     }
     
-    // Add all the tests in the has matched test 
+    // Add all the tests in the has matched test (they are now in tests[0]) 
     hasMatchedTest.trueBlock.addAll(tests[0].testStmts)
 
-    restTestCode := handleCases(cases[1..-1])
-    
-    // Handle next case
-    hasMatchedTest.trueBlock.addAll(restTestCode)
+    // Handle rest of cases
+    hasMatchedTest.trueBlock.addAll(handleCases(cases[1..-1]))
     
     return [hasMatchedTest]
   }
@@ -300,7 +302,7 @@ internal class SwitchSubs
       {
         assignExpr := (stmt as ExprStmt).expr as BinaryExpr
         if (assignExpr == null || assignExpr.id != ExprId.assign)
-          throw CompilerErr("Only assignment exprs in patterns", stmt.loc)
+          step.err("Only assignment exprs in patterns", stmt.loc)
         
         fieldExpr := assignExpr.lhs as FieldExpr
         
