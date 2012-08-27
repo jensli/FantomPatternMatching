@@ -2,11 +2,24 @@ using compiler_new
 
 class PatternsTest : Test
 {
+  Pod pod
+  
+  static const Unsafe nr
+  
+  static {
+    nr = Unsafe([0])
+  }
+  
+  new make() {
+    echo( "MAKE" )
+    pod = compile(testPrg)
+  }
+  
   
   Pod compile(Str src)
   {
     input := CompilerInput {
-        podName     = "comp_test_pod"
+        podName     = "patternTestPod"
         summary     = "test"
         version     = Version.defVal
         log.level   = LogLevel.debug
@@ -27,57 +40,91 @@ class PatternsTest : Test
   
   Void testSimple()
   {
-    pod := compile(testPrg)
+    echo("testSimple")
+    t := pod.type("TestClass").make
     
-    t := pod.types.first
-    
-    verifyEq("1", 
-      t.method("test").call(Exp("Woo", 3)),
-      "Matching")
+    verifyEq("1", t->test(Exp("Woo", 3)), "Matching")
      
-    verifyEq("Default", 
-       t.method("test").call("No Exp obj"),
-      "Not matching wrong type, default")
+    verifyEq("def", t->test("No Exp obj"), "Not matching wrong type, default")
 
-    verifyEq("2", 
-       t.method("test").call(Exp("Woo", 3, Exp("Waa", 2))))
+    verifyEq("2", t->test(Exp("Woo", 3, Exp("Waa", 2))))
 
-    verifyEq("Default",
-       t.method("test").call(Exp("Woo", 2, Exp("Waa", 3))))
+    verifyEq("def", t->test(Exp("Woo", 2, Exp("Waa", 3))))
 
-    verifyEq("3", 
-       t.method("test").call([1, 2]))
+    verifyEq("3", t->test([1, 2]))
 
-    verifyEq("Default", 
-       t.method("test").call([1, 1]))
+    verifyEq("def", t->test([1, 1]))
   
-    verifyEq("Default", 
-       t.method("test").call([1, 2, 3]))
+    verifyEq("def", t->test([1, 2, 3]))
   }
   
+  // TODO: Who doesn't this work?!
+  Void HIDE_testList()
+  {
+    echo("testList")
+    t := pod.type("TestClass").make
+    
+    verifyEq("1", t->testList([1, 2]))
+  }
+
   static const Str testPrg :=
      """
         using fantomPatternMatching
 
-        class TestRunner
-        {
   
+        class TestClass
+        {
           @DumpAstBefore
           @DumpAstAfter
-          static Str test(Obj? o)
+          Str test(Obj? o)
           {
             result := "Init"
             switch (o) {
-              case Exp{child = Exp{age = 2}}: result = "2"
-              case Exp{name = "Woo"; age = 3}: return "1"
-              case [1, 2]: result = "3"
+              case Exp{child = Exp{age = 2}}: return "2"
+              case Exp{name = "Woo"; age = 3}: result = "1"
+              case [1, 2]: return "3"
               default:
-                return "Default"
+                return "def"
             }
             
             return result
           }
+
   
+          Str testNormalSwich(Obj? o)
+          {
+            switch (o) {
+              case 1: return "1"
+              case 2: return "2"
+              default:
+                return "def"
+            }
+          }
+
+          @DumpAstAfter
+          Str testReturn(Obj? o)
+          {
+            switch (o) {
+              case [1]: return "1"
+              case [2]: return "2"
+              default:
+                return "def"
+            }
+          }
+          
+          @DumpAstBefore
+          @DumpAstAfter
+          Str testList(Obj? o)
+          {
+            switch (o) {
+              case [1, 2]: return "1"
+              case [,]: return "empty"
+              default: return "def"
+            }
+  
+            return "nomatch"
+          }
+          
           // @DumpAstBefore
           static Str expected(Obj? o)
           {
@@ -93,7 +140,7 @@ class PatternsTest : Test
                  result = "1"
               }
               if (!hasMatched) {
-                return "Default"
+                return "default"
               }
             }
   

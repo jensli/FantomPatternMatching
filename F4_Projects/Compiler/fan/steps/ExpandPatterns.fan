@@ -48,9 +48,8 @@ class ExpandPatterns : CompilerStep
     
     swch := (SwitchStmt) stmt
     
-    // TODO: Test for list literals also
-    if (swch.cases.any { it.cases.any { isItBlockCtor(it) } }) {
-      dump("Match switch found")
+    if (swch.cases.any { it.cases.any { isItBlockCtor(it) || it.id == ExprId.listLiteral } }) {
+      log.info("Match switch found")
       return SwitchSubs(swch, this).run
     } else {
       return null
@@ -59,7 +58,6 @@ class ExpandPatterns : CompilerStep
   
   static Bool isItBlockCtor(Expr expr)
   {
-    // TODO: This test seems dubious
     return expr.id == ExprId.call && ((CallExpr) expr).method.isItBlockCtor
   }
 
@@ -117,7 +115,17 @@ internal class SwitchSubs
     // Generate the acctual match logic
     matchCode := handleCases(swch.cases.ro)
     
-    return Stmt[hasMatchedStmt, switchObjStmt].addAll(matchCode)
+    result := Stmt[hasMatchedStmt, switchObjStmt].addAll(matchCode)
+
+    // Add a throws stmt is the switch would always exit
+    if (swch.isExit)
+    {
+      result.add(ThrowStmt(swch.loc, 
+        CallExpr.makeWithMethod(swch.loc, (Expr?)null, step.ns.errType.method("make"), 
+          [LiteralExpr.makeStr(swch.loc, step.ns, "Unreachable code")])))
+    }
+    
+    return result
   }
 
   **
