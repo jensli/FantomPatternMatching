@@ -1,3 +1,4 @@
+
 Pattern matching in switch proposal
 
 Intro
@@ -119,23 +120,17 @@ Might be undesirable.
 
 Further development
 ===================
-- Statically check that switches cover all possible cases
-- Patterns in more places, for instance for destructive assignments
 - Matching on tail of list
-- UPDATE: Matching on the type of value types, like 'Int'
-- UPDATE: Matching on more types, such as 'Range' and 'Time'
+- Matching on the type of value types, like 'Int'
+- Matching on more types, such as 'Range' and 'Time'
+- Statically check that switches cover all possible cases
+- Patterns in more places, e.g. for destructive assignments
 
 Prototype
 =========
 As a project in a programming language course I am working on a prototype implementation of this proposal. It will do a syntax tree transformation, turning any switch that contains object creation in the cases into a series of nested if statements. It will not implements guards or variable bindings. In this way I can avoid adding any new syntax.
 
-My initial attempt can be viewed here:
-
 `https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/Compiler/fan/steps/ExpandPatterns.fan`
-
-It currently translates a very simple switch into executable code, as seen in this test case:
-
-`https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/FantomPatternMatching/src/PatternsTest.fan`
 
 
 Grammar draft

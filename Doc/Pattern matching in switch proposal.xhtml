@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+  <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
+</head>
+
+<body>
+<p>Pattern matching in switch proposal</p>
+
+<h3>Intro</h3>
+
+<p>A very useful feature in many functional languages is pattern matching. This makes it very easy and concise to write some kind of logic that can be pretty hairy to express with normal if:s and switch:s.</p>
+
+<p>I propose adding pattern matching capabilities to the Fantom switch statement in a way that resemble how it looks in Scala.</p>
+
+<p class='UPDATE'>UPDATE: This proposal tries to introduce a unified way of switching on the type and contents of objects, instead of making smaller and more directed changes.</p>
+
+<p>For a description of the Scala model have a look at the <a href='http://www.artima.com/pins1ed/case-classes-and-pattern-matching.html'>Programming in Scala</a> book.</p>
+
+<p>Pattern matching would be added for lists, maps, and the type and fields of objects using the it-block style constructor syntax.</p>
+
+<h3>Example</h3>
+
+<p>This is an example of how it might look in Fantom:</p>
+
+<pre>class Animal{Animal? parent := null}
+
+class Turtle : Animal{Int field1 := 1}
+
+class Frog : Animal{Int field2 := 2}
+
+Void patternExample(Animal o)
+{
+  switch (o) {
+    case Turtle{field2 = 2; parent = Frog{} as par}:
+        echo("Object pattern. Parent: " + par)
+    case [1, _ as snd]:
+        echo("List pattern. Second list elem: " + snd)
+    case ["key1": 1, "key2": _ as val2] if (val2 > 7):
+        echo("Map pattern. key2: " + key2)
+    case 17:
+        echo("Simple literal")
+    default:
+        echo("Default")
+  }
+}
+</pre>
+
+<p>The first <code>case</code> branch is chosen if <code>o</code> is a object of type <code>Turtle</code>, its <code>field2</code> has value <code>2</code>, and its field <code>parent</code> has an object of type <code>Frog</code> as its value. The <code>par</code> variable introduced with the <code>as</code> keyword can be used only in that branch.</p>
+
+<p>If that pattern doesn't match, the list patterns in the second <code>case</code> is tried. It matches if <code>o</code> is a two elem list, with <code>1</code> as its first elem and any second elem. <code>_</code> is the wildcard, "don't care" pattern. It is bound to the variable <code>snd</code>.</p>
+
+<p>The third <code>case</code> is a map pattern, checking for the presence of keys <code>"key1"</code> and <code>"key2"</code> in <code>o</code>, that <code>"key1"</code> is mapped to <code>1</code>, and binding the value of <code>"key2"</code> to the variable <code>key2</code>.</p>
+
+<p>The fourth <code>case</code> is a simple expression pattern, which is compared to <code>o</code> with <code>equals</code>.</p>
+
+<h3>Details of proposal</h3>
+
+<p>The current switch works by comparing the value of an expression in each <code>case</code> with the objects <code>equals</code> method. This would change so that after each <code>case</code> a pattern is expected instead of an expression. The object that is switched on will be checked for a match against each pattern in turn.</p>
+
+<p>Simple expressions are valid patterns. They will get evaluated and their value compared with <code>equals</code> in the switch.</p>
+
+<p>But after the <code>case</code> keyword, list literals, map literals and it-block constructors will be interpreted as patterns, not as expressions creating objects.</p>
+
+<p>The value that is switched on is checked to see if it matches the structure of the pattern. The <code>case</code> branch associated with the first matching pattern is executed.</p>
+
+<p>A pattern can be either:</p>
+
+<ul>
+<li>A normal expression. This will work like the current switch, the value will be compared by <code>equals</code>.</li>
+
+<li>A literal object, it-block constructor style. This will be checked for a matching type, and can check the value of fields of that type with nested patterns.</li>
+
+<li>A literal list, with nested patterns for the elements.</li>
+
+<li>A literal map, with expressions for 
