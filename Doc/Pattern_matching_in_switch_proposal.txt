@@ -124,7 +124,8 @@ Further development
 - Matching on the type of value types, like 'Int'
 - Matching on more types, such as 'Range' and 'Time'
 - Statically check that switches cover all possible cases
-- Patterns in more places, e.g. for destructive assignments
+- Patterns in more places, e.g. for destructive assignments, if-statements
+- Match operator
 - Translating branches with mulitiple 'case' lables
 
 
