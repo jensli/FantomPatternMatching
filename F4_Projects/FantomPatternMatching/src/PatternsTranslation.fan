@@ -24,44 +24,44 @@ class PatternsTranslation
 
 //   This is what code using the pattern matching proposal syntax would look like:
     
-//    switch ( o ) {
-//      case Comp{name = "woo"; age as a; comp = Comp{age = 3} as c} if (a > 2): 
-//          echo( "Match pattern 1: ${a} ${c}" )
-//      case Other{ ... }: ... 
-//      case ...
-//      default:
-//    }
+    switch ( o ) {
+      case Comp{name = "woo"; age as a; comp = Comp{age = 3} as c} if (a > 2): 
+          echo( "Match pattern 1: ${a} ${c}" )
+      case Other{ ... }: ... 
+      case ...
+      default:
+    }
     
 //  The above could be translated into this:
-    
-    hasMatched := false
+    Bool hasMatched := false
     
     // Case 1 start
     if ( !hasMatched ) {
       
       // Pattern 1
-      o1 := o as Comp // Comp{}
+      Comp? o1 := o as Comp // Comp{}
       
       if ( o1 != null )   
       {
         if ( o1.name == "woo" )
         {
-          a := o1.age
+          Int a := o1.age
 
           // Start nested subpattern
-          o2 := o1.comp as Comp
+          Comp? o2 := o1.comp as Comp
       
           if ( o2 != null )
           {
-            c := o2
+            Comp c := o2
             
             if ( o2.age == 3 )
             {
               if ( a > 3 ) {
                 // Matches!
                 // Here all vars from containing scopes can be used
-                
                 hasMatched = true
+
+                echo( "Match pattern 1: ${a} ${c}" )
               }
             }
           }
