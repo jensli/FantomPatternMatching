@@ -16,8 +16,25 @@
 <div>
 
 <h1>Pattern matching in switch statement in Fantom</h1>
-<!--DOCUMENT_FRAGMENT-->
-<h2>Intro</h2>
+
+<h2>Project information</h2>
+<p>This is a project implementing pattern matching in switch statements in the Fantom language. This is done by modifying the compiler to translate a pattern expression to a sequence of if-statements.</p>
+
+<p>The project involves programming language related work in these areas:</p>
+<ul>
+  <li>Understanding the Fantom compiler</li>
+  <li>Constructing a translation scheme from patterns to if-statements</li>
+  <li>Implementing this as an AST transform in the compiler</li>
+</ul>
+
+<p>The following description of the project is written in the form of a suggestion to the language maintainers to implement this feature.</p>
+
+<p>The code for the implementation is here:</p> <a href="https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/Compiler/fan/steps/ExpandPatterns.fan">https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/Compiler/fan/steps/ExpandPatterns.fan</a>
+
+<p>Unit tests that verifies the new functionality are found here:</p> <a href="https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/FantomPatternMatching/src/PatternsTest.fan">https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/FantomPatternMatching/src/PatternsTest.fan</a>
+
+
+<h2>Introduction</h2>
 
 <p>A very useful feature in many functional languages is pattern matching. This makes it very easy and concise to write some kind of logic that can be pretty hairy to express with normal if:s and switch:s.</p>
 
