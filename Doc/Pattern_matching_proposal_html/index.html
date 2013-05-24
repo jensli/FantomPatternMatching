@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+
+
+<title>Pattern matching in switch statement in Fantom</title>
+
+<link rel="stylesheet" type="text/css" href="index.css" media="all">
+</head>
+<body>
+<div class="content">
+<div>
+<div class="fandoc">
+<div id="c13177" class="comment">
+<div>
+
+<h1>Pattern matching in switch statement in Fantom</h1>
+<!--DOCUMENT_FRAGMENT-->
+<h2>Intro</h2>
+
+<p>A very useful feature in many functional languages is pattern matching. This makes it very easy and concise to write some kind of logic that can be pretty hairy to express with normal if:s and switch:s.</p>
+
+<p>I propose adding pattern matching capabilities to the Fantom switch statement in a way that resemble how it looks in Scala.</p>
+
+<p>This proposal tries to introduce a unified way of switching on the type and contents of objects, instead of making smaller and more directed changes.</p>
+
+<p>This proposal is inspired by the way pattern matching works in Scala. For a description of the Scala model have a look at the <a href="http://www.artima.com/pins1ed/case-classes-and-pattern-matching.html">Programming in Scala</a> book.</p>
+
+<p>Pattern matching would be added for lists, maps, and the type and fields of objects using the it-block style constructor syntax.</p>
+
+<h2>Example</h2>
+
+<p>This is an example of how it might look in Fantom:</p>
+
+<pre>class Animal{Animal? parent := null}
+
+class Turtle : Animal{Int field1 := 1}
+
+class Frog : Animal{Int field2 := 2}
+
+Void patternExample(Animal o)
+{
+  switch (o) {
+    case Turtle{field2 = 2; parent = Frog{} as par}:
+        echo("Object pattern. Parent: " + par)
+    case [1, _ as snd | _ as rest]:
+        echo("List pattern. Second list elem: " + snd + " Rest: " + rest )
+    case ["key1": 1, "key2": _ as val2] if (val2 &gt; 7):
+        echo("Map pattern. key2: " + key2)
+    case 17:
+        echo("Simple literal")
+    default:
+        echo("Default")
+  }
+}
+</pre>
+
+<p>The first <code>case</code> branch is chosen if <code>o</code> is a object of type <code>Turtle</code>, its <code>field2</code> has value <code>2</code>, and its field <code>parent</code> has an object of type <code>Frog</code> as its value. The <code>par</code> variable introduced with the <code>as</code> keyword can be used only in that branch.</p>
+
+<p>If that pattern doesn't match, the list patterns in the second <code>case</code> is tried. It matches if <code>o</code> is a two element list, with <code>1</code> as its first element and any second element. <code>_</code> is the wild card, "don't care" pattern. It is bound to the variable <code>snd</code>. The <code>|</code> sign introduces a tail pattern which results in a new list of all remaining elements. </p>
+
+<p>The third <code>case</code> is a map pattern, checking for the presence of keys <code>"key1"</code> and <code>"key2"</code> in <code>o</code>, that <code>"key1"</code> is mapped to <code>1</code>, and binding the value of <code>"key2"</code> to the variable <code>key2</code>.</p>
+
+<p>The fourth <code>case</code> is a simple expression pattern, which is compared to <code>o</code> with <code>equals</code>.</p>
+
+<h2>Details of proposal</h2>
+
+<p>The current switch works by comparing the value of an expression in each <code>case</code> with the objects <code>equals</code> method. This would change so that after each <code>case</code> a pattern is expected instead of an expression. The object that is switched on will be checked for a match against each pattern in turn.</p>
+
+<p>Simple expressions are valid patterns. They will get evaluated and their value compared with <code>equals</code> in the switch.</p>
+
+<p>But after the <code>case</code> keyword, list literals, map literals and it-block constructors will be interpreted as patterns, not as expressions creating objects.</p>
+
+<p>The value that is switched on is checked to see if it matches the structure of the pattern. The <code>case</code> branch associated with the first matching pattern is executed.</p>
+
+<p>A pattern can be either:</p>
+
+<ul>
+<li>A normal expression. This will work like the current switch, the value will be compared by <code>equals</code>.</li>
+
+<li>A literal object, it-block constructor style. This will be checked for a matching type, and can check the value of fields of that type with nested patterns.</li>
+
+<li>A literal list, with nested patterns for the elements, and an optional rest pattern after a <code>|</code> character.</li>
+
+<li>A literal map, with expressions for the keys and nested patterns for values.</li>
+
+<li>The wild card identifier, <code>_</code>, which matches all values. This is useful when one wants to introduce new variables without checking their value.</li>
+</ul>
+
+<p>A pattern can also introduce new variables. That is done with the <code>as</code> keyword followed by a free identifier, written after the pattern.</p>
+
+<p>A top level pattern can have a guard. It consists of an <code>if</code> followed by a boolean expression. The pattern match if the expression evaluates to <code>true</code>.</p>
+
+<h2>Scala</h2>
+
+<p>The Scala match statement is extendible in a very flexible way with custom extractors. This rimes well with Scalas goal of being extendible with new syntax, but it is complex and potentially bad for readability. The Fantom solution should probably aim for something simpler which solves the large majority of cases.</p>
+
+<h2>Implementation</h2>
+
+<p>The semantics of a switch in which only simple literals are used remain the same as in the current switch. It can be compiled in the same way as now.</p>
+
+<p>A possible implementation for a switch with complex patterns is to translate it into a number of nested if statements. No fcode changes would be needed.</p>
+
+<p>This file demonstrates what the translation might look:</p>
+
+<p><a href="https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/FantomPatternMatching/src/PatternsTranslation.fan">https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/FantomPatternMatching/src/PatternsTranslation.fan</a></p>
+
+<h2>Open problems</h2>
+
+These are issues that should be considered in a final design.
+
+<h3>Change of semantics</h3>
+
+<p>In this proposal the patterns are written as normal literals in the <code>case</code> clauses. This will change the semantics of the switch, from comparing with the <code>equals</code> method to comparing with patterns. For list and map literals pattern matching and <code>equals</code> comparison would mean the same thing but for object patterns the meaning would change.</p>
+
+<p>A change in semantics is never good, however this case is probably extremely rare in code. In the Fantom distribution there doesn't seem to be any code which would have its behaviour changed.</p>
+
+<p>Another possibility would be to keep the <code>equals</code> semantics of <code>switch</code>, and introduce special syntax for the patterns. Perhaps using a <code>match</code> keyword instead of <code>case</code> when matching is wanted.
+
+<h3>Ambiguity between patterns and expressions</h3>
+
+<p>Normal expressions would be allowed as patterns, but it-block constructor, list and map literals would be interpreted as patterns instead of expressions. This might lead to confusion, for people and compilers. My feeling is that both would be able to handle that. But maybe some syntax could be used to explicitly mark out patterns, like preceding them with <code>#</code>, or why not <code>§</code>.</p>
+
+<h3>Reuse of <code>as</code> keyword</h3>
+
+<p>Might be undesirable.</p>
+
+<h2>Further development</h2>
+
+These are issues with the design not addressed in this proposal, but which might be desirable to consider in the future.
+
+<ul>
+<li>Statically check that switches cover all possible cases</li>
+
+<li>Patterns in more places, for instance for destructive assignments</li>
+
+<li>Matching on tail of list</li>
+
+<li>Matching on the type of value types</li>
+
+<li>Matching on more types, such as <code>Range</code> and <code>Time</code></li>
+
+<li>Generation of more efficient code, for example for cases many overlapping sub-patterns.  
+</ul>
+
+<h2>Prototype</h2>
+
+<p>I have implemented a prototype of this proposal. It does a syntax tree transformation, turning any switch that contains object creation in the cases into a series of nested if statements.  In this way I can avoid adding any new syntax. It does not implements guards or variable bindings, but branching on objects, list and map patterns work. Rest-patterns are not implemented.</p>
+
+<p>The code can be viewed here:</p>
+
+<p><a href="https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/Compiler/fan/steps/ExpandPatterns.fan">https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/Compiler/fan/steps/ExpandPatterns.fan</a></p>
+
+<p>It currently translates a very simple switch into executable code, as seen in this test case:</p>
+
+<p><a href="https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/FantomPatternMatching/src/PatternsTest.fan">https://github.com/jensli/FantomPatternMatching/blob/master/F4_Projects/FantomPatternMatching/src/PatternsTest.fan</a></p>
+
+<h2>Grammar draft</h2>
+
+<p>Remove the rule:</p>
+
+<pre>&lt;case&gt; := "case" &lt;expr&gt; ":" &lt;stmts&gt;
+</pre>
+
+<p>New rules:</p>
+
+<pre>&lt;case&gt;           := "case" &lt;casePattern&gt; ":" &lt;stmts&gt;
+&lt;casePattern&gt;    := &lt;patternExpr&gt; ["if" "(" &lt;expr&gt; ")"]
+&lt;patternExpr&gt;    := &lt;patternElem&gt; ["as" &lt;id&gt;]
+&lt;patternElem&gt;    := &lt;objectPattern&gt; | &lt;listPattern&gt; | &lt;mapPattern&gt; | &lt;expr&gt; | "_"
+&lt;objectPattern&gt;  := &lt;type&gt; "{" (&lt;memberPattern&gt; &lt;eos&gt;)* "}"
+&lt;memberPattern&gt;  := &lt;id&gt; "=" &lt;patternExpr&gt; &lt;eos&gt;
+
+&lt;listPattern&gt;    := Similar to &lt;list&gt;, substitute &lt;expr&gt; for &lt;patternExpr&gt; in items 
+&lt;mapPattern&gt;     := Similar to &lt;map&gt;, substitute &lt;expr&gt; for &lt;patternExpr&gt; in values
+</pre>
+
+<h2>Conclusion</h2>
+
+<p>This proposal brings pretty big changes that probably isn't trivial to implement. But the usefulness of pattern matching in languages like Erlang and Haskell makes me believe it would be worth it.</p>
+
+<p>It might be little tricky to wrap one's head around this when first confronted with it, but I think the idea of writing logic by matching values against patterns is a really simple, beautiful and expressive one, which is why I think it would fit in nicely in Fantom.</p>
+<!--/DOCUMENT_FRAGMENT-->
+</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

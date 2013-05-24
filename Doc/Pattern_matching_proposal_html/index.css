@@ -1,0 +1,73 @@
+/* ::::: http://fantom.org/sidewalk/css/sidewalk.css ::::: */
+
+body { font: 10pt Arial,sans-serif; margin: 0px 0px 3em; padding: 0px; }
+input { font: 10pt Arial,sans-serif; }
+code, pre, textarea { font: 9pt Monaco,"Courier New",monospace; }
+a { color: rgb(24, 80, 152); }
+img { vertical-align: middle; border: 0px none; }
+blockquote { margin: 1em 0px; padding-left: 1em; color: rgb(170, 0, 170); border-left: 1px solid rgb(204, 204, 204); }
+h1, h2, h3, h4, h5 { font-family: Arial,sans-serif; }
+h1 { font-size: 15pt; }
+h2 { font-size: 12pt; }
+h3 { font-size: 11pt; }
+div.header { background: none repeat scroll 0% 0% rgb(102, 102, 102); color: rgb(255, 255, 255); border-bottom: 5px solid rgb(68, 68, 68); }
+div.header > div { width: 850px; margin: 0px auto; padding: 10px 0px 35px; position: relative; }
+div.header h1 { font-size: 20pt; margin: 0px; padding: 0px; }
+div.header p { margin: 0px; padding: 0px; position: absolute; top: 12px; right: 0px; color: rgb(255, 255, 255); font-size: 8pt; }
+div.header p a { color: rgb(255, 255, 255); }
+div.header form { display: inline; }
+div.header form p { top: 40px; }
+div.header ul { margin: 0px; padding: 0px; list-style-type: none; position: absolute; bottom: 0px; left: 0px; white-space: nowrap; }
+div.header li { display: inline; font-size: 11pt; }
+div.header li a { float: left; padding: 6px 12px; margin-right: 2px; background: none repeat scroll 0% 0% rgb(34, 34, 34); color: rgb(255, 255, 255); text-decoration: none; outline: medium none; }
+div.header li a:hover { background: none repeat scroll 0% 0% rgb(51, 51, 51); }
+div.header li.active a { background: none repeat scroll 0% 0% rgb(68, 68, 68); }
+div.subHeader { background: url('subheaderbg.png') repeat-x scroll 0% 0% rgb(221, 221, 221); }
+div.subHeader > div { width: 850px; margin: 0px auto; }
+div.subHeader ul { margin: 0px; padding: 10px; list-style-type: none; white-space: nowrap; }
+div.subHeader a { color: rgb(68, 68, 68); }
+div.subHeader li { display: inline; padding-right: 10px; }
+div.content { margin-top: 1em; }
+div.content > div { width: 850px; margin: 0px auto; position: relative; }
+p.error { background: none repeat scroll 0% 0% rgb(255, 221, 221); padding: 10px; }
+div.fandoc { width: 630px; }
+div.fandoc p { font-size: 11pt; }
+div.fandoc li { font-size: 11pt; }
+div.fandoc p.meta { font-size: 10pt; }
+div.fandoc code { color: rgb(0, 136, 0); white-space: nowrap; }
+div.fandoc pre { color: rgb(85, 85, 85); background: none repeat scroll 0% 0% rgb(245, 245, 245); border: 1px dashed rgb(170, 170, 170); padding: 10px; }
+div.sidebar { position: absolute; right: 0px; top: 0px; width: 200px; }
+div.sidebar p.spaced { line-height: 1.5em; }
+div.topicTools { position: fixed; width: 178px; background: none repeat scroll 0% 0% rgb(221, 221, 221); border: 1px solid rgb(153, 153, 153); padding: 10px; }
+div.topicTools > p:first-child { margin-top: 0px; }
+div.topicTools > p:last-child { margin-bottom: 0px; }
+div.comment > p { margin: 0px; padding: 5px; position: relative; border-top: 1px solid rgb(204, 204, 204); background: url('commentbg.png') repeat-x scroll 0% 0% transparent; cursor: pointer; font-size: 10pt; }
+div.comment > p > span { font-weight: normal; font-size: 8pt; color: rgb(102, 102, 102); position: absolute; top: 6px; right: 5px; }
+div.comment > p br { display: none; }
+div.comment > p > span > span { position: absolute; right: 100px; white-space: nowrap; }
+div.comment > div { margin: 0px 0px 2em 1em; }
+div.topicEditor { position: relative; }
+div.topicEditor div.cheatsheet { position: absolute; top: 0px; left: 650px; width: 200px; z-index: 10; background: none repeat scroll 0% 0% rgb(255, 255, 255); padding-top: 1em; }
+div.topicEditor div.cheatsheet p { margin-top: 0px; }
+/* ::::: http://fantom.org/fandev.css ::::: */
+
+h1 { color: rgb(173, 78, 0); }
+h2 { color: rgb(37, 39, 42); }
+div.header { background: -moz-linear-gradient(center top , rgb(20, 37, 60), rgb(10, 18, 30)) repeat scroll 0% 0% rgb(20, 37, 60); color: rgb(255, 255, 255); border-bottom: 5px solid rgb(47, 83, 129); }
+div.header > div { width: 850px; margin: 0px auto; padding: 10px 0px 35px; position: relative; }
+div.header h1 { height: 1.4em; font-size: 22pt; margin: 0px; padding: 0px; }
+div.header h1 a { background: url('fantom.png') no-repeat scroll 0px 0px transparent; float: left; width: 161px; height: 37px; margin-top: 2px; overflow: hidden; text-indent: -9999px; outline-style: none; }
+div.header li { display: inline; font-size: 11pt; border-top: 1px solid rgb(255, 255, 255); }
+div.header li a { float: left; padding: 5px 12px 7px; margin-right: 2px; color: rgb(255, 255, 255); text-decoration: none; outline: medium none; background: -moz-linear-gradient(center top , rgb(32, 56, 88) 75%, rgb(27, 47, 73)) repeat scroll 0% 0% rgb(32, 56, 88); border-top: 2px solid rgb(38, 67, 104); }
+div.header li a:hover { border-top: 2px solid rgb(52, 89, 136); background: none repeat scroll 0% 0% rgb(39, 70, 111); }
+div.header li.active a { border-top: 2px solid rgb(73, 113, 165); background: none repeat scroll 0% 0% rgb(47, 83, 129); }
+div.subHeader { background: -moz-linear-gradient(center top , rgb(164, 164, 144), rgb(215, 215, 201) 25%) repeat scroll 0% 0% rgb(215, 215, 201); border-top: 1px solid rgb(30, 53, 84); border-bottom: 1px solid rgb(190, 190, 168); }
+div.subHeader > div { width: 850px; margin: 0px auto; }
+div.subHeader ul { margin: 0px; padding: 10px; list-style-type: none; white-space: nowrap; }
+div.subHeader li { display: inline; padding-right: 10px; color: rgb(78, 77, 58); }
+div.subHeader li a { color: rgb(78, 77, 58); font: 10pt Arial; }
+div.fandoc pre { color: rgb(51, 51, 51); background: none repeat scroll 0% 0% rgb(247, 247, 237); border: 1px solid rgb(223, 224, 205); padding: 10px; }
+div.topicTools { background: none repeat scroll 0% 0% rgb(247, 247, 237); border: 1px solid rgb(223, 224, 205); }
+div.topicTools a { color: rgb(78, 77, 58); }
+div.comment > p { border-top: 1px solid rgb(208, 218, 229); background: none repeat scroll 0% 0% rgb(242, 246, 248); }
+div.comment > p > span { color: rgb(76, 105, 126); }
